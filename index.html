@@ -1,0 +1,280 @@
+<!doctype html>
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>US WiFi RFP Dashboard — Live</title>
+<style>
+:root{--bg:#0e1116;--panel:#151a22;--panel2:#1b212c;--border:#2a3140;--text:#e2e6ee;--muted:#9aa3b2;
+--accent:#4ea1ff;--high:#37c99e;--med:#e8b34b;--low:#e07a5f;--chip:#232b38;--chip-hover:#2d3748;
+--row-alt:#12171f;--link:#7ab8ff}
+:root[data-theme="light"]{--bg:#f5f6f9;--panel:#ffffff;--panel2:#eef1f6;--border:#d7dde7;--text:#1c2430;--muted:#5c6675;
+--accent:#0b62d6;--high:#0e8f6e;--med:#a06a00;--low:#c0392b;--chip:#e6ebf3;--chip-hover:#dbe3ef;
+--row-alt:#f2f4f9;--link:#0b62d6}
+*{box-sizing:border-box}html{color-scheme:dark}html[data-theme=light]{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+.wrap{max-width:1500px;margin:0 auto;padding:20px 24px 60px}
+h1{font-size:22px;margin:0 0 4px}h1 .n{color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12.5px}
+.stat b{font-size:17px;display:block;color:var(--accent)}
+.stat.click{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.stat.click:hover{border-color:var(--accent)}
+.stat.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.controls{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+#search{width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);
+color:var(--text);font-size:14px;outline:none}#search:focus{border-color:var(--accent)}
+.filterrow{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;align-items:flex-start}
+.fgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:2px}
+.chip{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:14px;
+padding:3px 11px;font-size:12px;cursor:pointer;user-select:none}
+.chip:hover{background:var(--chip-hover)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tablebox{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:1350px}
+th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:9px 10px;font-size:11.5px;
+text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:2px solid var(--border);
+cursor:pointer;white-space:nowrap;z-index:2}
+th:hover{color:var(--accent)}
+th .arrow{font-size:10px;margin-left:3px}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+tbody tr:nth-child(even){background:var(--row-alt)}
+tbody tr:hover{background:var(--chip-hover)}
+td.tt{font-weight:600;min-width:220px}
+td.tt a{color:var(--link);text-decoration:none}td.tt a:hover{text-decoration:underline}
+td.due{white-space:nowrap;font-weight:600}
+.due-soon{color:var(--low)}
+.due-ok{color:var(--high)}
+.badge{display:inline-block;border-radius:10px;padding:1px 9px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-high{background:color-mix(in srgb,var(--high) 22%,transparent);color:var(--high)}
+.b-medium{background:color-mix(in srgb,var(--med) 22%,transparent);color:var(--med)}
+.b-low{background:color-mix(in srgb,var(--low) 22%,transparent);color:var(--low)}
+.b-Federal{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.cat{font-size:11px;color:var(--muted)}
+.foot{color:var(--muted);font-size:12px;margin-top:14px}
+#count{color:var(--accent);font-weight:600}
+#themeBtn{position:fixed;top:14px;right:16px;background:var(--panel);border:1px solid var(--border);
+color:var(--text);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;z-index:5}
+@media(max-width:800px){.wrap{padding:14px 10px 40px}}
+</style>
+</head>
+<body>
+<button id="themeBtn" title="Toggle theme">◐</button>
+<div class="wrap">
+<h1>US <span class="n">WiFi RFP</span> Dashboard <span class="n" style="color:var(--high)">LIVE</span></h1>
+<div class="sub">Currently-open Wi-Fi / wireless solicitations nationwide, any entity type · <span id="scannedTxt">awaiting first refresh</span> ·
+click headers to sort (Due sorts by date) · type to search · cards &amp; chips filter · "Due ≤7 days" card isolates urgent items · data auto-reloads every 5 min</div>
+<div class="summary" id="summary"></div>
+<div id="nodata" style="display:none;background:var(--panel);border:1px solid var(--low);border-radius:8px;padding:10px 14px;margin-bottom:14px;color:var(--low);font-weight:600">No data loaded — run refresh.ps1 (or double-click "Refresh and Open Dashboard.bat") to generate data.js, then reload this page.</div>
+<div class="controls">
+<input id="search" type="search" placeholder="Search title, issuer, description, state, category…">
+<div class="filterrow" id="filterrow"></div>
+</div>
+<div class="tablebox">
+<table>
+<thead><tr>
+<th data-key="due">Due <span class="arrow">▲</span></th>
+<th data-key="title">Opportunity <span class="arrow"></span></th>
+<th data-key="level">Level <span class="arrow"></span></th>
+<th data-key="state">State <span class="arrow"></span></th>
+<th data-key="tech_category">Category <span class="arrow"></span></th>
+<th data-key="description">What they want <span class="arrow"></span></th>
+<th data-key="response_channel">How to respond <span class="arrow"></span></th>
+<th data-key="confidence">Conf <span class="arrow"></span></th>
+<th data-key="notes">Notes <span class="arrow"></span></th>
+</tr></thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="foot">Showing <span id="count"></span> of <span id="totalN">0</span> opportunities · <span id="scannedFoot">awaiting first refresh</span> · due dates verified against listings where confidence=high ·
+"medium" = from search snippet, click through before acting · <span id="srcNote">live USAC data + curated seed</span></div>
+</div>
+<script src="data.js"></script>
+<script>
+let DATA = window.WIFI_DATA || [];
+let META = window.WIFI_META || {};
+const TODAY = (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })();
+
+const state = {q:"", level:new Set(), conf:new Set(), sortKey:"due", sortDir:1};
+let LEVELS=[];
+const CONFS=["high","medium","low"];
+
+function chip(label,on,cb){const b=document.createElement("button");b.className="chip"+(on?" on":"");
+b.textContent=label;b.onclick=()=>{cb(b);syncUI()};return b}
+
+function toggleAct(act){
+ if(!act){state.level.clear();state.conf.clear();state.q="";
+  const s=document.getElementById("search");if(s)s.value="";return}
+ const set=act.kind==="level"?state.level:state.conf;
+ set.has(act.val)?set.delete(act.val):set.add(act.val);
+}
+function updateStats(){(window.statEls||[]).forEach(([el,act])=>{
+ const set=act.kind==="level"?state.level:state.conf;
+ el.classList.toggle("on",set.has(act.val))})}
+function syncUI(){buildFilters();updateStats();render()}
+
+function buildFilters(){
+ const fr=document.getElementById("filterrow");
+ fr.replaceChildren();
+ const mk=(labelText,vals,set,toggle)=>{const g=document.createElement("div");g.className="fgroup";
+  const l=document.createElement("span");l.className="flabel";l.textContent=labelText;g.appendChild(l);
+  vals.forEach(v=>g.appendChild(chip(v,set.has(v),b=>{toggle(v,b)})));fr.appendChild(g)};
+ mk("Level",LEVELS,state.level,(v,b)=>b.classList.contains("on")?state.level.add(v):state.level.delete(v));
+ mk("Confidence",CONFS,state.conf,(v,b)=>b.classList.contains("on")?state.conf.add(v):state.conf.delete(v));
+ const g=document.createElement("div");g.className="fgroup";
+ const l=document.createElement("span");l.className="flabel";l.textContent="Reset";g.appendChild(l);
+ const rb=document.createElement("button");rb.className="chip";rb.textContent="✕ clear all";
+ rb.onclick=()=>{toggleAct(null);syncUI()};g.appendChild(rb);
+ fr.appendChild(g);
+}
+
+function daysLeft(r){if(!r.due)return null;const d=new Date(r.due+"T23:59:59");return Math.floor((d-TODAY)/86400000)}
+
+function rows(){
+ let r=DATA.filter(d=>{
+  if(state.level.size&&!state.level.has(d.level))return false;
+  if(state.conf.size){
+   if(state.conf.has("SOON")){const dl=daysLeft(d);if(!(dl!=null&&dl>=0&&dl<=7))return false}
+   if(state.conf.size>1||!state.conf.has("SOON")){if(!state.conf.has(d.confidence))return false}
+  }
+  if(state.q){const hay=(d.title+" "+d.issuer+" "+d.description+" "+d.tech_category+" "+d.state+" "+
+   d.entity_type+" "+d.notes).toLowerCase();if(!hay.includes(state.q))return false}
+  return true});
+ const k=state.sortKey,dir=state.sortDir;
+ r.sort((a,b)=>{
+  if(k==="due"){const x=a.due||"9999-12-31",y=b.due||"9999-12-31";return x<y?-1*dir:x>y?1*dir:0}
+  let x=a[k],y=b[k];x=(x==null)?"":x.toString().toLowerCase();y=(y==null)?"":y.toString().toLowerCase();
+  return x.localeCompare(y)*dir});
+ return r;
+}
+
+function render(){
+ const r=rows();
+ document.getElementById("count").textContent=r.length;
+ const tb=document.getElementById("tbody");tb.replaceChildren();
+ r.forEach(d=>{
+  const tr=document.createElement("tr");
+  const td=(cls,inner)=>{const c=document.createElement("td");if(cls)c.className=cls;c.append(inner);tr.appendChild(c)};
+  const dl=daysLeft(d);
+  const dueDiv=document.createElement("div");dueDiv.textContent=d.due||"unverified";
+  const sub=document.createElement("div");sub.className="cat";
+  if(dl!=null){sub.textContent=dl<0?"PAST DUE":(dl+" days left");dueDiv.classList.add(dl<=7?"due-soon":"due-ok")}
+  dueDiv.appendChild(sub);td("due",dueDiv);
+  const tw=document.createElement("div");
+  if(d.url){const a=document.createElement("a");a.href=d.url;a.target="_blank";a.rel="noopener";a.textContent=d.title;tw.appendChild(a)}
+  else tw.textContent=d.title;
+  const iss=document.createElement("div");iss.className="cat";iss.textContent=d.issuer;tw.appendChild(iss);
+  td("tt",tw);
+  const lv=document.createElement("div");
+  const lvB=document.createElement("span");lvB.className="badge b-high";lvB.textContent=d.level;lv.appendChild(lvB);
+  const et=document.createElement("div");et.className="cat";et.textContent=d.entity_type;lv.appendChild(et);
+  td(null,lv);
+  td(null,d.state||"");
+  td(null,d.tech_category||"");
+  td(null,d.description||"");
+  td(null,d.response_channel||"");
+  const cf=document.createElement("span");cf.className="badge b-"+d.confidence;cf.textContent=d.confidence;td(null,cf);
+  td(null,d.notes||"");
+  tb.appendChild(tr)});
+}
+
+function updateMeta(){
+ const m=window.WIFI_META||META||{};
+ const when=m.scanned?("scanned "+m.scanned):"awaiting first refresh";
+ document.getElementById("scannedTxt").textContent=when;
+ document.getElementById("scannedFoot").textContent=when;
+ document.getElementById("totalN").textContent=DATA.length;
+ const nd=document.getElementById("nodata");if(nd)nd.style.display=DATA.length?"none":"block";
+ let src="live USAC Form 470 data + curated seed";
+ if(m.usacError)src="⚠ USAC pull failed — seed data only ("+String(m.usacError).slice(0,90)+")";
+ else if(m.usacImported!=null)src="live: USAC ×"+m.usacImported+(m.samImported?", SAM.gov ×"+m.samImported:"")+" · seed kept ×"+m.seedKept+" · dropped past-due ×"+m.seedDropped;
+ if(m.samGovError)src+=" · ⚠ SAM.gov: "+String(m.samGovError).slice(0,110);
+ document.getElementById("srcNote").textContent=src;
+}
+function buildSummary(){
+ LEVELS=[...new Set(DATA.map(r=>r.level))];
+ const sm=document.getElementById("summary");sm.replaceChildren();
+ const stats=[["Total open",DATA.length,null],
+  ["Due ≤7 days",DATA.filter(d=>{const dl=daysLeft(d);return dl!=null&&dl>=0&&dl<=7}).length,{kind:"conf",val:"SOON"}],
+  ["High confidence",DATA.filter(d=>d.confidence==="high").length,{kind:"conf",val:"high"}]];
+ LEVELS.forEach(c=>stats.push([c,DATA.filter(d=>d.level===c).length,{kind:"level",val:c}]));
+ window.statEls=[];
+ stats.forEach(([l,v,act])=>{const s=document.createElement("div");s.className="stat"+(act?" click":"");
+  if(act)s.title="Click to filter";else{s.style.cursor="pointer";s.title="Click to reset all filters"}
+  s.onclick=()=>{toggleAct(act);syncUI()};
+  const b=document.createElement("b");b.textContent=v;const t=document.createElement("span");t.textContent=l;
+  s.appendChild(b);s.appendChild(t);sm.appendChild(s);
+  if(act)window.statEls.push([s,act])});
+ updateStats();
+}
+// Browser-side live pull from USAC Open Data (CORS-enabled API, no key).
+// Works on https hosting and most file:// contexts; if it fails, data.js data remains.
+async function fetchUsac(){
+ try{
+  const n=new Date(),ds=n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0");
+  const kw=["wireless","access point","wifi","wi-fi","wlan"].map(k=>"(lower(category_two_description) like '%"+k+"%')").join(" OR ");
+  const where="f470_status='Certified' AND allowable_contract_date >= '"+ds+"T00:00:00' AND ("+kw+")";
+  const url="https://opendata.usac.org/resource/jp7a-89nd.json"+
+   "?$select=application_number,billed_entity_name,billed_entity_state,funding_year,allowable_contract_date,certified_datetime,category_two_description,contact_email,rfp_identifier,applicant_type"+
+   "&$where="+encodeURIComponent(where)+"&$order=allowable_contract_date ASC&$limit=500";
+  const hits=await (await fetch(url)).json();
+  if(!Array.isArray(hits))return;
+  const have=new Set();
+  DATA.forEach(r=>{(r.url.match(/application_number=(\d+)/)||[]).forEach(x=>have.add(x[1]));
+   (r.title.match(/\b2\d{8}\b/)||[]).forEach(x=>have.add(x))});
+  const fresh=[];
+  hits.forEach(h=>{
+   const app=String(h.application_number||"");
+   if(!app||have.has(app))return;have.add(app);
+   const due=(String(h.allowable_contract_date||"").slice(0,10))||null;
+   const posted=(String(h.certified_datetime||"").slice(0,10))||null;
+   let desc=String(h.category_two_description||"");if(desc.length>600)desc=desc.slice(0,600)+"...";
+   const email=String(h.contact_email||"");
+   const rfp=String(h.rfp_identifier||"")==="Yes"?" (RFP attached)":"";
+   fresh.push({
+    title:"E-Rate FY"+h.funding_year+" Form 470 #"+app+" - Wireless Access Points"+rfp+" ("+String(h.billed_entity_name||"")+")",
+    issuer:String(h.billed_entity_name||""),level:"Education",
+    entity_type:String(h.applicant_type||"").slice(0,40)+" (E-Rate applicant, auto-imported)",
+    state:String(h.billed_entity_state||""),url:"https://opendata.usac.org/resource/jp7a-89nd?application_number="+app,
+    due_date:due,posted_date:posted,tech_category:"WLAN/E-Rate Cat2 (auto-imported)",
+    description:desc,
+    response_channel:email?("Email/contact per Form 470 #"+app+" (USAC EPC): "+email):("Respond against FCC Form 470 #"+app+" in USAC EPC (28-day open bidding window)"),
+    confidence:"high",
+    notes:"Browser-fetched live from USAC Open Data on "+ds+"; due date = 470 allowable_contract_date.",
+    due:due});
+  });
+  if(fresh.length){
+   DATA=DATA.concat(fresh);
+   buildSummary();buildFilters();updateMeta();render();
+   const m=document.getElementById("srcNote");
+   if(m)m.textContent=m.textContent+" · +"+fresh.length+" browser-live";
+  }
+ }catch(e){/* offline / blocked - static data.js data still shown */}
+}
+
+function init(){
+ buildSummary();
+ document.getElementById("search").addEventListener("input",e=>{state.q=e.target.value.toLowerCase().trim();render()});
+ document.querySelectorAll("th[data-key]").forEach(th=>{
+  th.addEventListener("click",()=>{const k=th.dataset.key;
+   if(state.sortKey===k)state.sortDir*=-1;else{state.sortKey=k;state.sortDir=1}
+   document.querySelectorAll("th .arrow").forEach(a=>a.textContent="");
+   const ar=th.querySelector(".arrow");if(ar)ar.textContent=state.sortDir===1?"▲":"▼";render()})});
+ const tBtn=document.getElementById("themeBtn");
+ tBtn.onclick=()=>{const cur=document.documentElement.dataset.theme||"dark";
+  const next=cur==="dark"?"light":"dark";document.documentElement.dataset.theme=next;
+  try{localStorage.setItem("wifi-theme",next)}catch(e){}};
+ try{const t=localStorage.getItem("wifi-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}
+ buildFilters();render();updateMeta();
+ setInterval(()=>{const s=document.createElement("script");s.src="data.js?ts="+Date.now();
+  s.onload=()=>{DATA=window.WIFI_DATA||DATA;META=window.WIFI_META||META;
+   buildSummary();buildFilters();updateMeta();render();fetchUsac()};
+  document.head.appendChild(s)},300000);
+ fetchUsac();
+}
+init();
+</script>
+</body>
+</html>
